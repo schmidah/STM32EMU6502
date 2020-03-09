@@ -53,13 +53,16 @@ void write6850(uint16_t address, uint8_t value) {
 		case ACIAControl:
             // TODO: decode baudrate, mode, break control, interrupt
 			break;
-		case ACIAData: {
-            uint8_t buf[1];
-            buf[0] = value;
-            //cdcacm_send_chunked_blocking(buf, sizeof(buf), usbd_dev);
-            while( CDC_Transmit_FS( buf, sizeof(buf) ) == USBD_BUSY );
+
+		case ACIAData:
+			{
+				uint8_t buf[1];
+				buf[0] = value;
+
+				while( CDC_Transmit_FS( buf, sizeof(buf) ) == USBD_BUSY );
+			}
 			break;
-        }
+
 		default:
             break;
 	}

@@ -111,7 +111,7 @@
 #define UNDOCUMENTED //when this is defined, undocumented opcodes are handled.
                      //otherwise, they're simply treated as NOPs.
 
-#define NES_CPU      //when this is defined, the binary-coded decimal (BCD)
+//#define NES_CPU      //when this is defined, the binary-coded decimal (BCD)
                      //status flag is not honored by ADC and SBC. the 2A03
                      //CPU in the Nintendo Entertainment System does not
                      //support BCD operation.
@@ -326,28 +326,17 @@ static void adc() {
     penaltyop = 1;
     value = getvalue();
     result = (uint16_t)a + value + (uint16_t)(status & FLAG_CARRY);
-   
-    carrycalc(result);
+
     zerocalc(result);
     overflowcalc(result, a, value);
     signcalc(result);
-    
+
     #ifndef NES_CPU
-    if (status & FLAG_DECIMAL) {
-        clearcarry();
-        
-        if ((a & 0x0F) > 0x09) {
-            a += 0x06;
-        }
-        if ((a & 0xF0) > 0x90) {
-            a += 0x60;
-            setcarry();
-        }
-        
-        clockticks6502++;
-    }
+    if (status & FLAG_DECIMAL)       /* detect and apply BCD nybble carries */
+        result += ((((result + 0x66) ^ (uint16_t)a ^ value) >> 3) & 0x22) * 3;
     #endif
-   
+
+    carrycalc(result);
     saveaccum(result);
 }
 
@@ -697,31 +686,25 @@ static void rts() {
 
 static void sbc() {
     penaltyop = 1;
-    value = getvalue() ^ 0x00FF;
+    value = getvalue() ^ 0x00FF;     /* ones complement */
+
+    #ifndef NES_CPU
+    if (status & FLAG_DECIMAL)       /* use nines complement for BCD */
+        value -= 0x0066;
+    #endif
+
     result = (uint16_t)a + value + (uint16_t)(status & FLAG_CARRY);
    
-    carrycalc(result);
     zerocalc(result);
     overflowcalc(result, a, value);
     signcalc(result);
 
     #ifndef NES_CPU
-    if (status & FLAG_DECIMAL) {
-        clearcarry();
-        
-        a -= 0x66;
-        if ((a & 0x0F) > 0x09) {
-            a += 0x06;
-        }
-        if ((a & 0xF0) > 0x90) {
-            a += 0x60;
-            setcarry();
-        }
-        
-        clockticks6502++;
-    }
+    if (status & FLAG_DECIMAL)       /* detect and apply BCD nybble carries */
+        result += ((((result + 0x66) ^ (uint16_t)a ^ value) >> 3) & 0x22) * 3;
     #endif
    
+    carrycalc(result);
     saveaccum(result);
 }
 
