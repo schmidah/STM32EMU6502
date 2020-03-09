@@ -57,7 +57,7 @@ void write6850(uint16_t address, uint8_t value) {
             uint8_t buf[1];
             buf[0] = value;
             //cdcacm_send_chunked_blocking(buf, sizeof(buf), usbd_dev);
-            CDC_Transmit_FS( buf, sizeof(buf) );
+            while( CDC_Transmit_FS( buf, sizeof(buf) ) == USBD_BUSY );
 			break;
         }
 		default:

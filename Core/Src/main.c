@@ -215,8 +215,8 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-// 6502 processor memory, 8KB (< 20KB)
-uint8_t ram[ 0x2000U ];
+// 6502 processor memory, 10KB (< 20KB)
+uint8_t ram[ 0x2800U ];
 uint8_t read6502(uint16_t address) {
 	// RAM
 	if (address < sizeof(ram)) {
