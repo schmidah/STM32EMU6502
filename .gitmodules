@@ -1,0 +1,3 @@
+[submodule "Core/OSIBAS_VTL"]
+	path = Core/OSIBAS_VTL
+	url = https://github.com/schmidah/OSIBAS_VTL
