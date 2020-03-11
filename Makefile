@@ -84,8 +84,12 @@ ASM_SOURCES =  \
 startup_stm32f103xb.s
 
 # BIN sources
-BIN_SOURCES = \
-Core/osi_bas/ROM.HEX
+EXTERN_BIN_SOURCE_DIR = \
+Core/OSIBAS_VTL
+EXTERN_BIN_SOURCE_BUILD_DIR = \
+$(EXTERN_BIN_SOURCE_DIR)/build
+EXTERN_BIN_SOURCES = \
+$(EXTERN_BIN_SOURCE_BUILD_DIR)/osi_bas.bin
 
 #######################################
 # binaries
@@ -184,9 +188,9 @@ all: $(BUILD_DIR)/$(TARGET).elf $(BUILD_DIR)/$(TARGET).hex $(BUILD_DIR)/$(TARGET
 #######################################
 # BINFLAGS
 #######################################
-BINFLAGS = --redefine-sym _binary_build_ROM_o_bin_start=rom6502_start
-BINFLAGS += --redefine-sym _binary_build_ROM_o_bin_size=rom6502_size
-BINFLAGS += --redefine-sym _binary_build_ROM_o_bin_end=rom6502_end
+BINFLAGS = --redefine-sym 	_binary_Core_OSIBAS_VTL_build_osi_bas_bin_start=rom6502_start
+BINFLAGS += --redefine-sym 	_binary_Core_OSIBAS_VTL_build_osi_bas_bin_size=rom6502_size
+BINFLAGS += --redefine-sym 	_binary_Core_OSIBAS_VTL_build_osi_bas_bin_end=rom6502_end
 
 #######################################
 # build the application
@@ -198,8 +202,8 @@ vpath %.c $(sort $(dir $(C_SOURCES)))
 OBJECTS += $(addprefix $(BUILD_DIR)/,$(notdir $(ASM_SOURCES:.s=.o)))
 vpath %.s $(sort $(dir $(ASM_SOURCES)))
 # list of BIN program objects
-OBJECTS += $(addprefix $(BUILD_DIR)/,$(notdir $(BIN_SOURCES:.HEX=.o)))
-vpath %.HEX $(sort $(dir $(BIN_SOURCES)))
+OBJECTS += $(addprefix $(BUILD_DIR)/,$(notdir $(EXTERN_BIN_SOURCES:.bin=.o)))
+vpath %.bin $(sort $(dir $(EXTERN_BIN_SOURCES)))
 
 $(BUILD_DIR)/%.o: %.c Makefile | $(BUILD_DIR) 
 	$(CC) -c $(CFLAGS) -Wa,-a,-ad,-alms=$(BUILD_DIR)/$(notdir $(<:.c=.lst)) $< -o $@
@@ -207,11 +211,10 @@ $(BUILD_DIR)/%.o: %.c Makefile | $(BUILD_DIR)
 $(BUILD_DIR)/%.o: %.s Makefile | $(BUILD_DIR)
 	$(AS) -c $(CFLAGS) $< -o $@
 	
-$(BUILD_DIR)/%.o: %.HEX Makefile | $(BUILD_DIR)
-	$(CP) -I ihex -O binary $< $@.bin
-	$(CP) -I binary -O elf32-littlearm -B arm --rename-section .data=.rodata,alloc,load,readonly,data,contents $(BINFLAGS) $@.bin $@
+$(BUILD_DIR)/%.o: %.bin Makefile | $(BUILD_DIR) $(EXTERN_BIN_SOURCE_DIR)
+	$(CP) -I binary -O elf32-littlearm -B arm --rename-section .data=.rodata,alloc,load,readonly,data,contents $(BINFLAGS) $< $@
 
-$(BUILD_DIR)/$(TARGET).elf: $(OBJECTS) Makefile
+$(BUILD_DIR)/$(TARGET).elf: $(OBJECTS) $(EXTERN_BIN_SOURCES) Makefile
 	$(CC) $(OBJECTS) $(LDFLAGS) -o $@
 	$(SZ) $@
 
@@ -220,15 +223,23 @@ $(BUILD_DIR)/%.hex: $(BUILD_DIR)/%.elf | $(BUILD_DIR)
 	
 $(BUILD_DIR)/%.bin: $(BUILD_DIR)/%.elf | $(BUILD_DIR)
 	$(BIN) $< $@	
-	
+
+$(EXTERN_BIN_SOURCE_BUILD_DIR)/%.bin: $(EXTERN_BIN_SOURCE_DIR)
+	make $(MFLAGS) -C $(EXTERN_BIN_SOURCE_DIR) all
+
 $(BUILD_DIR):
-	mkdir $@		
+	mkdir $@
+	
+$(EXTERN_BIN_SOURCE_DIR):
+	git submodule init
+	git submodule update	
 
 #######################################
 # clean up
 #######################################
 clean:
 	-rm -fR $(BUILD_DIR)
+	make $(MFLAGS) -C $(EXTERN_BIN_SOURCE_DIR) $@
   
 #######################################
 # dependencies

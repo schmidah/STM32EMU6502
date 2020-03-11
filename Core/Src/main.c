@@ -203,20 +203,27 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOA_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(USER_LED_GPIO_Port, USER_LED_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin( USER_LED_GPIO_Port, USER_LED_Pin, GPIO_PIN_RESET );
 
   /*Configure GPIO pin : USER_LED_Pin */
   GPIO_InitStruct.Pin = USER_LED_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(USER_LED_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init( USER_LED_GPIO_Port, &GPIO_InitStruct );
+
+  HAL_GPIO_WritePin( GPIOA, GPIO_PIN_11 | GPIO_PIN_12, GPIO_PIN_RESET );
+
+  GPIO_InitStruct.Pin = GPIO_PIN_11 | GPIO_PIN_12;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  HAL_GPIO_Init( GPIOA, &GPIO_InitStruct );
 
 }
 
 /* USER CODE BEGIN 4 */
 // 6502 processor memory, 10KB (< 20KB)
-uint8_t ram[ 0x2800U ];
+uint8_t ram[ 0x2D00U ];
 uint8_t read6502(uint16_t address) {
 	// RAM
 	if (address < sizeof(ram)) {
@@ -261,16 +268,18 @@ void write6502(uint16_t address, uint8_t value) {
 /* USER CODE END Header_StartDefaultTask */
 void StartDefaultTask(void *argument)
 {
-  /* init code for USB_DEVICE */
-  MX_USB_DEVICE_Init();
-  /* USER CODE BEGIN 5 */
-  /* Infinite loop */
-  for(;;)
-  {
-	  step6502();
-	  //osDelay(1);
-  }
-  /* USER CODE END 5 */ 
+
+	/* USER CODE BEGIN 5 */
+	osDelay( 50U );
+	/* init code for USB_DEVICE */
+	MX_USB_DEVICE_Init();
+	/* Infinite loop */
+	for(;;)
+	{
+		step6502();
+		//osDelay(1);
+	}
+	/* USER CODE END 5 */
 }
 
 /**
